@@ -15,7 +15,7 @@ export const MM_ID = "MM-01";
 const PARTICIPANTS = [
   { id: MM_ID, name: "Meridian Liquidity Partners (DMM)", kind: "market_maker", country: "US", accredited: true, credentialId: CREDENTIAL("mm-01"), wallet: WALLET(1), cashCents: 50_000_000_000 },
   { id: "INST-01", name: "Halcyon Asset Management", kind: "institution", country: "US", accredited: true, credentialId: CREDENTIAL("inst-01"), wallet: WALLET(2), cashCents: 2_500_000_000 },
-  { id: "ACC-01", name: "Jordan Reyes (Accredited)", kind: "accredited", country: "US", accredited: true, credentialId: CREDENTIAL("acc-01"), wallet: WALLET(3), cashCents: 50_000_000 },
+  { id: "ACC-01", name: "Mauro Lomibao Dar III (Accredited)", kind: "accredited", country: "US", accredited: true, credentialId: CREDENTIAL("acc-01"), wallet: WALLET(3), cashCents: 50_000_000 },
   { id: "RET-01", name: "Sam Okafor (Retail)", kind: "retail", country: "US", accredited: false, credentialId: CREDENTIAL("ret-01"), wallet: null, cashCents: 2_000_000 },
   { id: "OFF-01", name: "Lumen Capital Pte. (Singapore)", kind: "institution", country: "SG", accredited: true, credentialId: CREDENTIAL("off-01"), wallet: WALLET(5), cashCents: 900_000_000 },
   { id: "SAN-01", name: "Test Entity — OFAC hit", kind: "retail", country: "US", accredited: false, credentialId: null, wallet: null, cashCents: 1_000_000, sanctionsClear: false },
