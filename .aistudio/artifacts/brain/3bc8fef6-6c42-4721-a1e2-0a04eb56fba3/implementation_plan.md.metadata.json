@@ -1,0 +1,6 @@
+{
+  "summary":  "Consolidated 3-Tier Web3 Architecture & Gemini Intelligence Bridge Plan:\n1. Intelligence Layer: Gemini API Function Calling schema parser (prepareTransfer, prepareSwap, prepareLiquidityMint) converting natural language prompts into deterministic structured parameters.\n2. Orchestration Layer: Client/backend transaction serializer using ethers.js/viem to encode ABI calldata, calculate nonces, and estimate EIP-1559 gas fees.\n3. Multi-Mode Signing & Custody Layer:\n   - Mode A: Non-Custodial User Wallet (MetaMask, Coinbase, Rabby via EIP-6963).\n   - Mode B: Embedded MPC Passkey Wallet (WebAuthn PRF / sharded key simulation).\n   - Mode C: Autonomous Agent TEE Enclave with ERC-4337 Session Keys, 24h spending caps ($50/day default), and contract allow-lists.\n4. JSON-RPC Node Layer: Live query and mempool broadcasting (eth_sendRawTransaction) to Ethereum, Base, and Arbitrum.",
+  "updatedAt":  "2026-11-02T03:01:28.578472410Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

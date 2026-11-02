@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token World Exchange (TWE) ATS®</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- D3.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        twe: {
+                            bg: '#0a0d14',
+                            card: '#121824',
+                            border: '#1f293d',
+                            accent: '#3b82f6',
+                            green: '#10b981',
+                            red: '#ef4444',
+                            warning: '#f59e0b',
+                            gold: '#fbbf24'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #0a0d14;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0d14; }
+        ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+        /* Pulse glow animations */
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        .halt-active {
+            animation: pulse-red 1.5s infinite;
+        }
+
+        .gradient-border {
+            border: 1px solid transparent;
+            background-image: linear-gradient(#121824, #121824), linear-gradient(to right, #3b82f6, #8b5cf6);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+
+        .tooltip-d3 {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: opacity 0.15s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0a0d14] text-slate-200 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- TOP HEADER / BRANDING BANNER -->
+    <header class="bg-[#121824] border-b border-[#1f293d] px-4 py-2.5 sticky top-0 z-40 shadow-xl">
+        <div class="max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-blue-400/30">
+                    <span class="font-bold text-white text-base font-mono">TWE</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        Token World Exchange (TWE) ATS®
+                        <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-mono">SEC Reg ATS</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-mono">Alternative Trading System &amp; Institutional Digital Asset Venue · Sole Owner: Mauro Lomibao Dar III®</p>
+                </div>
+            </div>
+
+            <!-- Global Status Bar -->
+            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+                <!-- Venue Status -->
+                <div id="exchangeStatusBadge" class="flex items-center gap-2 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-md">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span id="venueStatusText">VENUE: LIVE</span>
+                </div>
+
+                <!-- SEC Rule 15c3-5 Status -->
+                <div id="riskEngineBadge" class="flex items-center gap-2 bg-blue-950/60 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-md">
+                    <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                    <span id="riskBadgeText">SEC RULE 15c3-5 COLLARS: ACTIVE</span>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex bg-[#0a0d14] border border-[#1f293d] p-0.5 rounded-lg">
+                    <button id="navTradingBtn" onclick="switchTab('trading')" class="px-3 py-1 rounded-md text-slate-200 bg-blue-600 font-semibold transition">
+                        <i class="fa-solid font-mono text-xs mr-1.5 fa-chart-line"></i>Trading Venue
+                    </button>
+                    <button id="navComplianceBtn" onclick="switchTab('compliance')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white transition">
+                        <i class="fa-solid font-mono text-xs mr-1.5 fa-shield-cat"></i>Regulatory &amp; Heatmap
+                    </button>
+                    <button id="navAuth0Btn" onclick="switchTab('auth0')" class="px-3 py-1 rounded-md text-slate-400 hover:text-white transition flex items-center gap-1.5">
+                        <i class="fa-solid font-mono text-xs fa-key text-amber-400"></i>Auth0 &amp; Social Auth
+                    </button>
+                </div>
+
+                <!-- User Auth0 Profile Widget -->
+                <div class="relative inline-block text-left">
+                    <button id="userProfileBtn" onclick="toggleUserDropdown()" class="flex items-center gap-2 bg-[#1b2436] hover:bg-[#232e45] text-slate-200 border border-slate-700/60 px-3 py-1.5 rounded-md transition cursor-pointer">
+                        <div class="w-5 h-5 rounded-full bg-blue-500 text-white font-bold text-[10px] flex items-center justify-center border border-blue-300">
+                            ML
+                        </div>
+                        <span id="userName" class="font-medium text-slate-200">trader@tokenworldexchange.com</span>
+                        <span id="userTierBadge" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-1.5 py-0.2 rounded uppercase font-bold">FREE_TIER_1</span>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-[10px]"></i>
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div id="userDropdown" class="hidden absolute right-0 mt-2 w-72 bg-[#121824] border border-[#1f293d] rounded-xl shadow-2xl z-50 p-3">
+                        <div class="border-b border-slate-800 pb-2.5 mb-2.5">
+                            <p class="text-xs text-slate-400">Authenticated via Auth0</p>
+                            <p id="userEmailDisplay" class="text-xs font-mono font-semibold text-white truncate">trader@tokenworldexchange.com</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Provider: <span id="authProviderDisplay" class="text-blue-400 font-semibold">Google / Gmail OAuth</span></p>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-400">Account Status:</span>
+                                <span class="text-emerald-400 font-semibold">ACTIVE</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-400">Membership Tier:</span>
+                                <span id="dropdownTierText" class="text-amber-400 font-mono font-semibold">FREE_TIER_1</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-400">VIP Order Access:</span>
+                                <span id="vipAccessText" class="text-red-400 font-semibold"><i class="fa-solid fa-lock mr-1"></i> Restricted</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-2.5 border-t border-slate-800 space-y-2">
+                            <button onclick="toggleVipTier()" id="upgradeBtn" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-slate-950 font-bold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-md cursor-pointer">
+                                <i class="fa-solid fa-crown"></i> Upgrade to VIP Tier ($299/mo)
+                            </button>
+                            <button onclick="switchTab('auth0')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 px-3 rounded-lg text-xs flex items-center justify-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-right-to-bracket mr-1"></i> Switch Social Login Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="flex-grow p-4 max-w-[1920px] w-full mx-auto space-y-4">
+
+        <!-- TAB 1: TRADING VENUE & SEC 15c3-5 RISK COLLAR MONITOR -->
+        <section id="tabTrading" class="space-y-4">
+            <!-- Global Risk Alert Banner (Hidden by default, shown during HALT) -->
+            <div id="haltBanner" class="hidden bg-red-950/90 border-2 border-red-600 rounded-xl p-4 text-red-200 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl halt-active">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-red-600/30 rounded-lg flex items-center justify-center text-red-400 text-2xl font-bold shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider">CRITICAL: SEC RULE 15c3-5 CIRCUIT BREAKER BREACHED - TRADING HALTED</h2>
+                        <p id="haltReason" class="text-xs font-mono text-red-300">Market-Maker Price Deviation threshold exceeded (+4.2% over NBBO reference price).</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="password" id="supervisorKeyQuick" placeholder="Supervisor Key" value="MLD-TAURUS-CHIEF-COMPLIANCE" class="bg-black/60 border border-red-500/80 rounded px-2.5 py-1 text-xs font-mono text-white">
+                    <button onclick="resetTradingHalt()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg text-xs uppercase tracking-wider shadow whitespace-nowrap cursor-pointer">
+                        Clear &amp; Resume Trading
+                    </button>
+                </div>
+            </div>
+
+            <!-- TWE ATS Layout Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+                <!-- LEFT COLUMN: Live Order Book & Depth (Col 4) -->
+                <div class="lg:col-span-4 bg-[#121824] border border-[#1f293d] rounded-xl p-4 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-800">
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <i class="fa-solid fa-bars-staggered text-blue-400"></i> Level 2 Order Book (TWE ATS®)
+                            </h3>
+                            <select id="tradingPairSelect" onchange="changePair()" class="bg-[#0a0d14] border border-slate-700 text-xs font-mono rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-blue-500">
+                                <option value="BTC/USD">BTC/USD - TWE ATS®</option>
+                                <option value="ETH/USD">ETH/USD - TWE ATS®</option>
+                                <option value="TWE/USD">TWE/USD - TWE ATS®</option>
+                            </select>
+                        </div>
+
+                        <!-- Price / Spread Summary -->
+                        <div class="grid grid-cols-3 text-center py-2 bg-[#0a0d14] rounded-lg border border-slate-800/80 mb-3 font-mono text-xs">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">NBBO BID</span>
+                                <span id="nbboBid" class="text-emerald-400 font-bold">$64,250.00</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">SPREAD</span>
+                                <span id="nbboSpread" class="text-slate-300 font-bold">$10.00</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">NBBO ASK</span>
+                                <span id="nbboAsk" class="text-red-400 font-bold">$64,260.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Asks (Sells) -->
+                        <div class="space-y-1 font-mono text-xs mb-2">
+                            <div class="flex justify-between text-[10px] text-slate-500 uppercase px-1">
+                                <span>Price (USD)</span>
+                                <span>Size</span>
+                                <span>Total (USD)</span>
+                            </div>
+                            <div id="asksContainer" class="space-y-0.5">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Mid Price / Collar Buffer Indicator -->
+                        <div class="my-2 py-1.5 px-3 bg-blue-950/40 border-y border-blue-500/20 flex justify-between items-center text-xs font-mono">
+                            <span class="text-blue-400 flex items-center gap-1">
+                                <i class="fa-solid fa-shield text-[10px]"></i> 15c3-5 Collar Band:
+                            </span>
+                            <span id="collarBandDisplay" class="text-slate-300 font-semibold">$61,980.00 - $66,510.00 (±3.5%)</span>
+                        </div>
+
+                        <!-- Bids (Buys) -->
+                        <div class="space-y-1 font-mono text-xs">
+                            <div id="bidsContainer" class="space-y-0.5">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-[11px] text-slate-400 font-mono">
+                        <span>Matching Engine Latency: <strong class="text-emerald-400">142 μs</strong></span>
+                        <span>SEC Reg ATS Status: <strong class="text-blue-400">COMPLIANT</strong></span>
+                    </div>
+                </div>
+
+                <!-- MIDDLE COLUMN: Order Entry & SEC Rule 15c3-5 Risk Collar Engine (Col 4) -->
+                <div class="lg:col-span-4 bg-[#121824] border border-[#1f293d] rounded-xl p-4 flex flex-col justify-between shadow-lg">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-800">
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <i class="fa-solid fa-calculator text-emerald-400"></i> Order Entry &amp; Risk Collar Pre-Check
+                            </h3>
+                            <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">Pre-Trade Validation Active</span>
+                        </div>
+
+                        <!-- Order Form -->
+                        <form id="orderForm" onsubmit="handleOrderSubmit(event)" class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="sideBuyBtn" onclick="setOrderSide('BUY')" class="py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white border border-emerald-500 shadow-md cursor-pointer">
+                                    BUY / BID
+                                </button>
+                                <button type="button" id="sideSellBtn" onclick="setOrderSide('SELL')" class="py-2 rounded-lg font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 cursor-pointer">
+                                    SELL / ASK
+                                </button>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-slate-400 mb-1">Order Type</label>
+                                <select id="orderType" onchange="updateCollarCheck()" class="w-full bg-[#0a0d14] border border-slate-700 text-xs font-mono rounded-lg p-2 text-white focus:border-blue-500">
+                                    <option value="LIMIT">LIMIT ORDER (Standard)</option>
+                                    <option value="MARKET">MARKET ORDER (Standard)</option>
+                                    <option value="SWEEP">INTERMARKET SWEEP (VIP Tier)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs text-slate-400">Limit Price (USD)</label>
+                                    <span class="text-[10px] text-slate-500 font-mono">NBBO: <span id="formNbboRef">$64,255.00</span></span>
+                                </div>
+                                <div class="relative">
+                                    <input type="number" id="orderPrice" step="0.01" value="64255.00" oninput="updateCollarCheck()" class="w-full bg-[#0a0d14] border border-slate-700 text-xs font-mono rounded-lg p-2 text-white focus:border-blue-500 pl-7">
+                                    <span class="absolute left-2.5 top-2 text-xs text-slate-500">$</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-center mb-1">
+                                    <label class="text-xs text-slate-400">Order Quantity / Notional Units</label>
+                                    <span class="text-[10px] text-slate-500 font-mono">Max Limit: <span id="formMaxLimit">50,000</span></span>
+                                </div>
+                                <input type="number" id="orderQuantity" step="1" value="12" oninput="updateCollarCheck()" class="w-full bg-[#0a0d14] border border-slate-700 text-xs font-mono rounded-lg p-2 text-white focus:border-blue-500">
+                            </div>
+
+                            <!-- Live SEC 15c3-5 Pre-Trade Check Card -->
+                            <div class="bg-[#0a0d14] border border-slate-800 rounded-lg p-3 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-shield-virus text-amber-400"></i> SEC 15c3-5 Risk Check:
+                                    </span>
+                                    <span id="riskStatusPill" class="text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                                        PASS: COMPLIANT
+                                    </span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                                    <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 block text-[10px]">PRICE DEVIATION</span>
+                                        <span id="deviationDisplay" class="text-emerald-400 font-bold">0.00%</span>
+                                    </div>
+                                    <div class="p-2 rounded bg-slate-900/60 border border-slate-800">
+                                        <span class="text-slate-400 block text-[10px]">TOTAL VALUE (USD)</span>
+                                        <span id="orderTotalValue" class="text-white font-bold">$771,060.00</span>
+                                    </div>
+                                </div>
+
+                                <p id="collarExplanation" class="text-[11px] text-slate-400">
+                                    Order price is within allowable ±3.5% NBBO collar band ($61,980.00 - $66,510.00).
+                                </p>
+                            </div>
+
+                            <!-- Quick Stress Test Presets -->
+                            <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">Test Presets:</span>
+                                <div class="flex gap-1.5">
+                                    <button type="button" onclick="applyPreset('safe')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-400 text-[10px] font-mono border border-slate-700 cursor-pointer">
+                                        Safe NBBO
+                                    </button>
+                                    <button type="button" onclick="applyPreset('breach')" class="px-2 py-1 rounded bg-red-950/60 hover:bg-red-900 text-red-300 text-[10px] font-mono border border-red-800 cursor-pointer">
+                                        ⚡ Breach (+15%)
+                                    </button>
+                                    <button type="button" onclick="applyPreset('fatfinger')" class="px-2 py-1 rounded bg-amber-950/60 hover:bg-amber-900 text-amber-300 text-[10px] font-mono border border-amber-800 cursor-pointer">
+                                        ⚡ Fat-Finger ($5M)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="submitOrderBtn" class="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer">
+                                Submit Order to TWE ATS® CLOB
+                            </button>
+                        </form>
+                    </div>
+
+                    <div id="submissionFeedback" class="mt-2 text-xs font-mono text-center"></div>
+                </div>
+
+                <!-- RIGHT COLUMN: SEC Rule 15c3-5 Pre-Trade Risk Engine & Live Circuit Breakers (Col 4) -->
+                <div class="lg:col-span-4 bg-[#121824] border border-[#1f293d] rounded-xl p-4 flex flex-col justify-between shadow-lg space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-800">
+                            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-amber-400"></i> SEC 15c3-5 Risk Parameters
+                            </h3>
+                            <span class="text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded">
+                                FINRA Rule 3110
+                            </span>
+                        </div>
+
+                        <div class="space-y-4 text-xs">
+                            <!-- Price Collar Slider -->
+                            <div class="space-y-1 bg-[#0a0d14] p-3 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-300 font-medium">NBBO Price Collar Band:</span>
+                                    <span id="collarPercentLabel" class="text-blue-400 font-mono font-bold">±3.5%</span>
+                                </div>
+                                <input type="range" id="collarBandInput" min="1" max="10" step="0.5" value="3.5" oninput="updateRiskConfig()" class="w-full accent-blue-500 cursor-pointer">
+                                <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                                    <span>Strict (±1%)</span>
+                                    <span>Current: ±3.5%</span>
+                                    <span>Wide (±10%)</span>
+                                </div>
+                            </div>
+
+                            <!-- Max Order Size Slider -->
+                            <div class="space-y-1 bg-[#0a0d14] p-3 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-300 font-medium">Max Single Order Notional:</span>
+                                    <span id="maxNotionalLabel" class="text-emerald-400 font-mono font-bold">$2,000,000 USD</span>
+                                </div>
+                                <input type="range" id="maxNotionalInput" min="100000" max="5000000" step="100000" value="2000000" oninput="updateRiskConfig()" class="w-full accent-emerald-500 cursor-pointer">
+                                <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+                                    <span>$100K</span>
+                                    <span>$2.0M</span>
+                                    <span>$5.0M</span>
+                                </div>
+                            </div>
+
+                            <!-- Intercept Audit Trail -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-bold text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-list-check text-slate-400"></i> Real-Time Intercept Log
+                                    </span>
+                                    <span id="interceptCountBadge" class="text-[10px] font-mono text-slate-400">0 Intercepts</span>
+                                </div>
+
+                                <div class="bg-[#0a0d14] border border-slate-800 rounded-lg p-2 max-h-48 overflow-y-auto font-mono text-[11px] space-y-1.5" id="interceptLogContainer">
+                                    <div class="text-slate-500 text-center py-4">No collar violations detected. Risk controls normal.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Regulatory Compliance Footer Note -->
+                    <div class="p-2.5 rounded-lg bg-blue-950/20 border border-blue-500/20 text-[10px] text-slate-400 font-mono">
+                        <strong class="text-blue-300">Mandate:</strong> Exchange Act Rule 15c3-5 requires broker-dealers and ATS venues to maintain automated algorithmic risk controls preventing entry of erroneous orders.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: REGULATORY DASHBOARD & TOP-OF-BOOK SPOOFING HEATMAP (D3) -->
+        <section id="tabCompliance" class="hidden space-y-4">
+            <!-- Heatmap Header Card -->
+            <div class="bg-[#121824] border border-[#1f293d] rounded-xl p-5 shadow-lg">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded font-mono font-bold">
+                                FINRA Rule 5210 · SEC Rule 10b-5
+                            </span>
+                            <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-mono">
+                                D3.js Vector Heatmap
+                            </span>
+                        </div>
+                        <h2 class="text-lg font-bold text-white mt-1.5 flex items-center gap-2">
+                            <i class="fa-solid fa-fire-flame-curved text-red-500"></i> Top-of-Book Order Cancellation &amp; Spoofing Heatmap
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Monitors rapid cancellation bursts occurring at top-of-book price levels. High-volume cancellations with resting time &lt;400ms indicate non-bona-fide spoofing pressure.
+                        </p>
+                    </div>
+
+                    <!-- Surveillance Metrics Summary -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                        <div class="p-2.5 rounded bg-[#0a0d14] border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">CANCELLATION RATE</span>
+                            <span id="metricCancelRate" class="text-amber-400 font-bold text-sm">82.4%</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-[#0a0d14] border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">AVG RESTING TIME</span>
+                            <span id="metricRestingTime" class="text-emerald-400 font-bold text-sm">184 ms</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-[#0a0d14] border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">SPOOFING ANOMALIES</span>
+                            <span id="metricAnomalyCount" class="text-red-400 font-bold text-sm">3 Active</span>
+                        </div>
+                        <div class="p-2.5 rounded bg-[#0a0d14] border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">SURVEILLANCE RADAR</span>
+                            <span class="text-blue-400 font-bold text-sm">REAL-TIME</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Controls & Thresholds Toolbar -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleHeatmapFeed()" id="feedToggleBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow cursor-pointer">
+                            <i class="fa-solid fa-pause" id="feedToggleIcon"></i>
+                            <span id="feedToggleText">Pause Live Simulation</span>
+                        </button>
+                        <button onclick="stepHeatmapFeed()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 cursor-pointer">
+                            <i class="fa-solid fa-forward-step"></i> Step Slice
+                        </button>
+                        <button onclick="resetHeatmapData()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 cursor-pointer">
+                            <i class="fa-solid fa-rotate"></i> Reset Matrix
+                        </button>
+                    </div>
+
+                    <!-- Legend & Color Scale -->
+                    <div class="flex items-center gap-2 text-xs font-mono">
+                        <span class="text-slate-400 text-[11px]">Cancellation Intensity:</span>
+                        <div class="flex items-center gap-1 text-[10px]">
+                            <span class="w-3 h-3 rounded-sm bg-[#0F172A] border border-slate-700"></span>
+                            <span class="text-slate-500">Low</span>
+                            <span class="w-3 h-3 rounded-sm bg-[#0284C7]"></span>
+                            <span class="w-3 h-3 rounded-sm bg-[#F59E0B]"></span>
+                            <span class="w-3 h-3 rounded-sm bg-[#F97316]"></span>
+                            <span class="w-3 h-3 rounded-sm bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                            <span class="text-red-400 font-bold">Spoof Cluster</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- D3 SVG HEATMAP VIEWPORT -->
+                <div class="mt-4 bg-[#0a0d14] border border-slate-800 rounded-xl p-3 relative overflow-x-auto" id="heatmapContainer">
+                    <svg id="d3SpoofingSvg" class="w-full min-w-[800px] h-[340px]"></svg>
+                    <div id="d3Tooltip" class="tooltip-d3 hidden"></div>
+                </div>
+
+                <!-- Surveillance Incidents Log Table -->
+                <div class="mt-4 pt-3 border-t border-slate-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-radiation text-red-500"></i> Flagged Spoofing Incident Stream (Audit Tape)
+                        </h3>
+                        <span class="text-[10px] font-mono text-slate-400">FINRA Form ATS-N Recordkeeping</span>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-800 rounded-lg">
+                        <table class="w-full text-xs font-mono text-left">
+                            <thead class="bg-[#0a0d14] text-slate-400 border-b border-slate-800">
+                                <tr>
+                                    <th class="py-2 px-3">INCIDENT ID</th>
+                                    <th class="py-2 px-3">PRICE LEVEL</th>
+                                    <th class="py-2 px-3">CANCELLED VOL</th>
+                                    <th class="py-2 px-3">RESTING DURATION</th>
+                                    <th class="py-2 px-3">PARTICIPANT ID</th>
+                                    <th class="py-2 px-3">SEVERITY</th>
+                                    <th class="py-2 px-3 text-right">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incidentsTableBody" class="divide-y divide-slate-800 bg-[#121824]/60">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: AUTH0 & SOCIAL AUTH CONFIGURATION -->
+        <section id="tabAuth0" class="hidden space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <!-- Left Column: Auth0 Active Session & Identity Providers (Col 6) -->
+                <div class="lg:col-span-6 bg-[#121824] border border-[#1f293d] rounded-xl p-5 shadow-lg space-y-4">
+                    <div class="border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded font-mono font-bold">
+                                Universal Login
+                            </span>
+                            <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded font-mono">
+                                OAuth 2.0 / OIDC
+                            </span>
+                        </div>
+                        <h2 class="text-lg font-bold text-white mt-1 flex items-center gap-2">
+                            <i class="fa-solid fa-key text-amber-400"></i> Auth0 Social Login &amp; Role-Based Access Control
+                        </h2>
+                        <p class="text-xs text-slate-400">
+                            Token World Exchange (TWE) ATS® employs enterprise Auth0 architecture to authenticate subscribers, enforce KYC tier entitlements, and restrict market access under SEC Rule 15c3-5.
+                        </p>
+                    </div>
+
+                    <!-- Active User Profile Card -->
+                    <div class="p-4 rounded-xl bg-[#0a0d14] border border-slate-800 space-y-3 font-mono text-xs">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg border-2 border-blue-400">
+                                ML
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-white">Mauro Lomibao Dar III</h3>
+                                <p class="text-slate-400 text-[11px]">trader@tokenworldexchange.com</p>
+                                <span class="text-[10px] text-emerald-400">auth0|66b8f390d401e74a81b</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">CURRENT ROLE:</span>
+                                <span id="currentRoleBadge" class="text-amber-400 font-bold">FREE_TIER_1</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px]">MARKET PERMISSIONS:</span>
+                                <span id="marketPermBadge" class="text-slate-300">Standard Orders Only</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Login Switcher Simulation -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-semibold text-slate-300">Simulate Social Identity Provider Sign-In:</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button onclick="loginAs('google')" class="p-2.5 rounded-lg bg-[#0a0d14] hover:bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
+                                <i class="fa-brands fa-google text-red-400"></i> Google / Gmail
+                            </button>
+                            <button onclick="loginAs('github')" class="p-2.5 rounded-lg bg-[#0a0d14] hover:bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
+                                <i class="fa-brands fa-github text-white"></i> GitHub OAuth
+                            </button>
+                            <button onclick="loginAs('microsoft')" class="p-2.5 rounded-lg bg-[#0a0d14] hover:bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
+                                <i class="fa-brands fa-microsoft text-blue-400"></i> Microsoft 365
+                            </button>
+                            <button onclick="loginAs('web3')" class="p-2.5 rounded-lg bg-[#0a0d14] hover:bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer">
+                                <i class="fa-solid fa-wallet text-amber-400"></i> Web3 MetaMask
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VIP Upgrade Tier Card -->
+                    <div class="p-4 rounded-xl bg-gradient-to-br from-amber-950/40 via-yellow-950/20 to-slate-950 border border-amber-500/40 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-crown text-amber-400 text-lg"></i>
+                                <h3 class="font-bold text-white text-sm">Institutional VIP Tier Subscription</h3>
+                            </div>
+                            <span class="text-xs font-bold text-amber-400 font-mono">$299 / month</span>
+                        </div>
+                        <ul class="text-xs text-slate-300 space-y-1 list-disc pl-4">
+                            <li>Direct Market Access (DMA) &amp; sub-millisecond execution priority</li>
+                            <li>Unlocks Intermarket Sweep Orders (ISO) and Dark Pool routing</li>
+                            <li>Exempt from standard retail rate limiting under SEC Rule 15c3-5</li>
+                        </ul>
+                        <button onclick="toggleVipTier()" id="toggleVipBtn" class="w-full py-2 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition shadow-lg cursor-pointer">
+                            Activate VIP Membership
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Auth0 Post-Login Action & Decoded JWT Token (Col 6) -->
+                <div class="lg:col-span-6 bg-[#121824] border border-[#1f293d] rounded-xl p-5 shadow-lg space-y-4">
+                    <div class="border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                            <i class="fa-solid fa-code text-blue-400"></i> Auth0 Actions Middleware (onExecutePostLogin.js)
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Executed on every authentication flow to inject roles and SEC regulatory clearance flags into the JWT token.
+                        </p>
+                    </div>
+
+                    <!-- Code Snippet -->
+                    <div class="bg-[#0a0d14] border border-slate-800 rounded-lg p-3 font-mono text-xs overflow-x-auto text-slate-300">
+                        <pre class="text-blue-300"><code>/**
+ * Handler that will be called during the execution of a PostLogin flow.
+ * @param {Event} event - Details about the user and the context.
+ * @param {PostLoginAPI} api - Interface and methods to change the behavior of the login.
+ */
+exports.onExecutePostLogin = async (event, api) => {
+  const namespace = 'https://tokenworldexchange.com';
+  
+  // Assign default role if none present
+  const userRoles = event.authorization?.roles || ['FREE_TIER_1'];
+  
+  // Inject custom claims for SEC Rule 15c3-5 risk engine
+  api.idToken.setCustomClaim(`${namespace}/roles`, userRoles);
+  api.idToken.setCustomClaim(`${namespace}/ats_cleared`, true);
+  api.idToken.setCustomClaim(`${namespace}/vip_hft_enabled`, userRoles.includes('VIP_TRADER'));
+  api.idToken.setCustomClaim(`${namespace}/sec_rule_15c3_5_collar_limit_usd`, 2000000);
+};</code></pre>
+                    </div>
+
+                    <!-- Live Decoded JWT Token Payload -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-white font-mono">Live JWT IdToken Claims:</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">HS256 Verified</span>
+                        </div>
+                        <div id="jwtPayloadDisplay" class="bg-[#0a0d14] border border-slate-800 rounded-lg p-3 font-mono text-[11px] text-emerald-400 overflow-x-auto">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#121824] border-t border-[#1f293d] py-4 px-6 text-xs text-slate-500 font-mono">
+        <div class="max-w-[1920px] mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
+            <div>
+                <strong class="text-slate-300">Token World Exchange (TWE) ATS®</strong> · Sole Owner/ Creator: Mauro Lomibao Dar III®
+            </div>
+            <div class="flex flex-wrap gap-4 text-[11px]">
+                <span>CRD #8492041</span>
+                <span>SEC Reg ATS #8-70912</span>
+                <span>FINRA Member</span>
+                <span>DTCC FAST #9450</span>
+                <span>SEC Rule 15c3-5 Compliant</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE JAVASCRIPT ENGINE -->
+    <script>
+        // State variables
+        let currentTab = 'trading';
+        let currentPair = 'BTC/USD';
+        let isHalted = false;
+        let haltReason = '';
+        let orderSide = 'BUY';
+        let isVip = false;
+        let currentUser = {
+            name: 'Mauro Lomibao Dar III',
+            email: 'trader@tokenworldexchange.com',
+            provider: 'Google / Gmail OAuth',
+            role: 'FREE_TIER_1'
+        };
+
+        // Risk Engine Parameters
+        let riskConfig = {
+            collarPercent: 3.5, // ±3.5%
+            maxNotional: 2000000 // $2,000,000 USD
+        };
+
+        // Live Order Book Data (BTC/USD default)
+        let orderBook = {
+            nbboRef: 64255.00,
+            spread: 10.00,
+            asks: [
+                { price: 64280.00, size: 4.5, total: 289260.00 },
+                { price: 64270.00, size: 2.8, total: 179956.00 },
+                { price: 64265.00, size: 6.2, total: 398443.00 },
+                { price: 64260.00, size: 1.5, total: 96390.00 }
+            ],
+            bids: [
+                { price: 64250.00, size: 3.2, total: 205600.00 },
+                { price: 64245.00, size: 5.1, total: 327649.50 },
+                { price: 64235.00, size: 8.0, total: 513880.00 },
+                { price: 64220.00, size: 12.4, total: 796328.00 }
+            ]
+        };
+
+        let interceptLogs = [];
+
+        // Tab Switching
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.getElementById('tabTrading').classList.add('hidden');
+            document.getElementById('tabCompliance').classList.add('hidden');
+            document.getElementById('tabAuth0').classList.add('hidden');
+
+            document.getElementById('navTradingBtn').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white transition';
+            document.getElementById('navComplianceBtn').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white transition';
+            document.getElementById('navAuth0Btn').className = 'px-3 py-1 rounded-md text-slate-400 hover:text-white transition flex items-center gap-1.5';
+
+            if (tabId === 'trading') {
+                document.getElementById('tabTrading').classList.remove('hidden');
+                document.getElementById('navTradingBtn').className = 'px-3 py-1 rounded-md text-slate-200 bg-blue-600 font-semibold transition';
+            } else if (tabId === 'compliance') {
+                document.getElementById('tabCompliance').classList.remove('hidden');
+                document.getElementById('navComplianceBtn').className = 'px-3 py-1 rounded-md text-slate-200 bg-blue-600 font-semibold transition';
+                initOrUpdateHeatmap();
+            } else if (tabId === 'auth0') {
+                document.getElementById('tabAuth0').classList.remove('hidden');
+                document.getElementById('navAuth0Btn').className = 'px-3 py-1 rounded-md text-slate-200 bg-blue-600 font-semibold transition flex items-center gap-1.5';
+                updateJwtDisplay();
+            }
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicked outside
+        window.addEventListener('click', function(e) {
+            const btn = document.getElementById('userProfileBtn');
+            const dropdown = document.getElementById('userDropdown');
+            if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Set Side (Buy vs Sell)
+        function setOrderSide(side) {
+            orderSide = side;
+            const buyBtn = document.getElementById('sideBuyBtn');
+            const sellBtn = document.getElementById('sideSellBtn');
+            const submitBtn = document.getElementById('submitOrderBtn');
+
+            if (side === 'BUY') {
+                buyBtn.className = 'py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white border border-emerald-500 shadow-md cursor-pointer';
+                sellBtn.className = 'py-2 rounded-lg font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 cursor-pointer';
+                submitBtn.className = 'w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer';
+                submitBtn.innerText = 'Submit BUY Order to TWE ATS® CLOB';
+            } else {
+                sellBtn.className = 'py-2 rounded-lg font-bold text-xs bg-red-600 text-white border border-red-500 shadow-md cursor-pointer';
+                buyBtn.className = 'py-2 rounded-lg font-bold text-xs bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 cursor-pointer';
+                submitBtn.className = 'w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer';
+                submitBtn.innerText = 'Submit SELL Order to TWE ATS® CLOB';
+            }
+            updateCollarCheck();
+        }
+
+        // Calculate and validate order against SEC Rule 15c3-5 collars
+        function updateCollarCheck() {
+            const price = parseFloat(document.getElementById('orderPrice').value) || 0;
+            const qty = parseFloat(document.getElementById('orderQuantity').value) || 0;
+            const notional = price * qty;
+            const refPrice = orderBook.nbboRef;
+
+            const devPct = ((price - refPrice) / refPrice) * 100;
+            const absDev = Math.abs(devPct);
+
+            const devDisplay = document.getElementById('deviationDisplay');
+            const totalDisplay = document.getElementById('orderTotalValue');
+            const statusPill = document.getElementById('riskStatusPill');
+            const explanation = document.getElementById('collarExplanation');
+
+            devDisplay.innerText = (devPct >= 0 ? '+' : '') + devPct.toFixed(2) + '%';
+            totalDisplay.innerText = '$' + notional.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const lowerCollar = refPrice * (1 - riskConfig.collarPercent / 100);
+            const upperCollar = refPrice * (1 + riskConfig.collarPercent / 100);
+
+            let isPriceBreach = absDev > riskConfig.collarPercent;
+            let isNotionalBreach = notional > riskConfig.maxNotional;
+
+            if (!isPriceBreach && !isNotionalBreach) {
+                statusPill.className = 'text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-500/30';
+                statusPill.innerText = 'PASS: COMPLIANT';
+                devDisplay.className = 'text-emerald-400 font-bold';
+                explanation.innerHTML = `Order price is within allowable ±${riskConfig.collarPercent}% NBBO collar band ($${lowerCollar.toFixed(2)} - $${upperCollar.toFixed(2)}).`;
+            } else if (isPriceBreach) {
+                statusPill.className = 'text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-red-950 text-red-400 border border-red-500/30';
+                statusPill.innerText = 'REJECT: PRICE COLLAR';
+                devDisplay.className = 'text-red-400 font-bold animate-pulse';
+                explanation.innerHTML = `<strong class="text-red-400">BREACH:</strong> Price dev (${devPct.toFixed(2)}%) exceeds statutory ±${riskConfig.collarPercent}% band! Order will trip circuit breaker.`;
+            } else if (isNotionalBreach) {
+                statusPill.className = 'text-[10px] font-mono px-2 py-0.5 rounded font-bold bg-amber-950 text-amber-400 border border-amber-500/30';
+                statusPill.innerText = 'REJECT: NOTIONAL CAP';
+                devDisplay.className = 'text-amber-400 font-bold';
+                explanation.innerHTML = `<strong class="text-amber-400">FAT-FINGER BREACH:</strong> Total value ($${(notional/1e6).toFixed(2)}M) exceeds max single ticket limit ($${(riskConfig.maxNotional/1e6).toFixed(1)}M).`;
+            }
+        }
+
+        // Apply quick testing preset
+        function applyPreset(type) {
+            const ref = orderBook.nbboRef;
+            if (type === 'safe') {
+                document.getElementById('orderPrice').value = ref.toFixed(2);
+                document.getElementById('orderQuantity').value = '10';
+            } else if (type === 'breach') {
+                const breachPrice = ref * (1 + (riskConfig.collarPercent + 3.5) / 100);
+                document.getElementById('orderPrice').value = breachPrice.toFixed(2);
+                document.getElementById('orderQuantity').value = '15';
+            } else if (type === 'fatfinger') {
+                document.getElementById('orderPrice').value = ref.toFixed(2);
+                document.getElementById('orderQuantity').value = Math.ceil((riskConfig.maxNotional * 2) / ref).toString();
+            }
+            updateCollarCheck();
+        }
+
+        // Update Risk Config via Sliders
+        function updateRiskConfig() {
+            const collarVal = parseFloat(document.getElementById('collarBandInput').value);
+            const notionalVal = parseFloat(document.getElementById('maxNotionalInput').value);
+
+            riskConfig.collarPercent = collarVal;
+            riskConfig.maxNotional = notionalVal;
+
+            document.getElementById('collarPercentLabel').innerText = `±${collarVal.toFixed(1)}%`;
+            document.getElementById('maxNotionalLabel').innerText = `$${notionalVal.toLocaleString()} USD`;
+
+            // Update collar band display in order book
+            const ref = orderBook.nbboRef;
+            const low = (ref * (1 - collarVal / 100)).toFixed(2);
+            const high = (ref * (1 + collarVal / 100)).toFixed(2);
+            document.getElementById('collarBandDisplay').innerText = `$${Number(low).toLocaleString()} - $${Number(high).toLocaleString()} (±${collarVal}%)`;
+
+            updateCollarCheck();
+        }
+
+        // Handle Order Submission
+        function handleOrderSubmit(e) {
+            e.preventDefault();
+            const feedback = document.getElementById('submissionFeedback');
+
+            if (isHalted) {
+                feedback.innerHTML = '<span class="text-red-400 font-bold">🚫 SUBMISSION REJECTED: TWE ATS® IS IN EMERGENCY HALT STATE. CLEARANCE REQUIRED.</span>';
+                return;
+            }
+
+            const price = parseFloat(document.getElementById('orderPrice').value) || 0;
+            const qty = parseFloat(document.getElementById('orderQuantity').value) || 0;
+            const notional = price * qty;
+            const refPrice = orderBook.nbboRef;
+            const devPct = Math.abs(((price - refPrice) / refPrice) * 100);
+
+            // 1. Evaluate Rule 15c3-5 Price Collar
+            if (devPct > riskConfig.collarPercent) {
+                triggerHalt(`Price Deviation of ${devPct.toFixed(2)}% exceeded ±${riskConfig.collarPercent}% collar band (NBBO ref: $${refPrice}).`);
+                addInterceptLog('PRICE_COLLAR_BREACH', price, qty, notional, `Dev +${devPct.toFixed(2)}% over NBBO`);
+                feedback.innerHTML = `<span class="text-red-400 font-bold">❌ ORDER REJECTED &amp; CIRCUIT BREAKER TRIPPED! Breach logged to SEC Audit tape.</span>`;
+                return;
+            }
+
+            // 2. Evaluate Single Order Notional
+            if (notional > riskConfig.maxNotional) {
+                triggerHalt(`Single order notional of $${(notional/1e6).toFixed(2)}M breached cap of $${(riskConfig.maxNotional/1e6).toFixed(1)}M.`);
+                addInterceptLog('MAX_NOTIONAL_BREACH', price, qty, notional, `Notional $${(notional/1e6).toFixed(2)}M exceeds limit`);
+                feedback.innerHTML = `<span class="text-red-400 font-bold">❌ ORDER REJECTED: Single ticket cap breached.</span>`;
+                return;
+            }
+
+            // Valid order passed through matching engine
+            feedback.innerHTML = `<span class="text-emerald-400 font-bold">✅ ORDER ACCEPTED &amp; MATCHED in 142 μs (Atomic T+0 Settlement Verified).</span>`;
+            setTimeout(() => { feedback.innerHTML = ''; }, 5000);
+        }
+
+        // Trigger Trading Halt
+        function triggerHalt(reason) {
+            isHalted = true;
+            haltReason = reason;
+
+            const banner = document.getElementById('haltBanner');
+            const reasonText = document.getElementById('haltReason');
+            const venueBadge = document.getElementById('exchangeStatusBadge');
+            const venueText = document.getElementById('venueStatusText');
+            const riskBadge = document.getElementById('riskBadgeText');
+
+            banner.classList.remove('hidden');
+            reasonText.innerText = reason;
+
+            venueBadge.className = 'flex items-center gap-2 bg-red-950/80 text-red-400 border border-red-500 px-3 py-1.5 rounded-md animate-pulse';
+            venueText.innerText = 'VENUE: HALTED (SEC 15c3-5)';
+
+            riskBadge.innerText = 'CIRCUIT BREAKER: TRIPPED';
+        }
+
+        // Reset Trading Halt
+        function resetTradingHalt() {
+            const keyInput = document.getElementById('supervisorKeyQuick');
+            const key = keyInput ? keyInput.value.trim() : '';
+
+            if (key !== 'MLD-TAURUS-CHIEF-COMPLIANCE' && key !== 'SUPERVISOR') {
+                alert('Invalid Supervisor Clearance Key! Master key: MLD-TAURUS-CHIEF-COMPLIANCE');
+                return;
+            }
+
+            isHalted = false;
+            document.getElementById('haltBanner').classList.add('hidden');
+
+            const venueBadge = document.getElementById('exchangeStatusBadge');
+            const venueText = document.getElementById('venueStatusText');
+            const riskBadge = document.getElementById('riskBadgeText');
+
+            venueBadge.className = 'flex items-center gap-2 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-md';
+            venueText.innerText = 'VENUE: LIVE';
+
+            riskBadge.innerText = 'SEC RULE 15c3-5 COLLARS: ACTIVE';
+
+            const feedback = document.getElementById('submissionFeedback');
+            feedback.innerHTML = '<span class="text-emerald-400 font-bold">🟢 Trading Venue resumed by Chief Compliance Officer. Normal matching restored.</span>';
+            setTimeout(() => { feedback.innerHTML = ''; }, 4000);
+        }
+
+        // Intercept Logging
+        function addInterceptLog(type, price, qty, notional, reason) {
+            const record = {
+                id: 'INC-' + Math.floor(1000 + Math.random() * 9000),
+                time: new Date().toLocaleTimeString(),
+                type: type,
+                price: price,
+                qty: qty,
+                notional: notional,
+                reason: reason
+            };
+            interceptLogs.unshift(record);
+            renderInterceptLogs();
+        }
+
+        function renderInterceptLogs() {
+            const container = document.getElementById('interceptLogContainer');
+            const badge = document.getElementById('interceptCountBadge');
+            badge.innerText = `${interceptLogs.length} Intercepts`;
+
+            if (interceptLogs.length === 0) {
+                container.innerHTML = '<div class="text-slate-500 text-center py-4">No collar violations detected. Risk controls normal.</div>';
+                return;
+            }
+
+            container.innerHTML = interceptLogs.slice(0, 10).map(log => `
+                <div class="p-2 rounded bg-slate-900 border border-red-900/60 space-y-0.5">
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-red-400 font-bold">${log.type}</span>
+                        <span class="text-slate-500">${log.time}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-300">
+                        <span>#${log.id} · ${log.qty} @ $${log.price.toFixed(2)}</span>
+                        <span class="text-white font-bold">$${(log.notional/1e3).toFixed(0)}k</span>
+                    </div>
+                    <div class="text-[10px] text-red-300 truncate">${log.reason}</div>
+                </div>
+            `).join('');
+        }
+
+        // Change Trading Pair
+        function changePair() {
+            const pair = document.getElementById('tradingPairSelect').value;
+            currentPair = pair;
+
+            if (pair === 'BTC/USD') {
+                orderBook.nbboRef = 64255.00;
+                orderBook.spread = 10.00;
+            } else if (pair === 'ETH/USD') {
+                orderBook.nbboRef = 3450.00;
+                orderBook.spread = 0.50;
+            } else if (pair === 'TWE/USD') {
+                orderBook.nbboRef = 52.50;
+                orderBook.spread = 0.05;
+            }
+
+            document.getElementById('nbboBid').innerText = '$' + (orderBook.nbboRef - orderBook.spread / 2).toFixed(2);
+            document.getElementById('nbboAsk').innerText = '$' + (orderBook.nbboRef + orderBook.spread / 2).toFixed(2);
+            document.getElementById('nbboSpread').innerText = '$' + orderBook.spread.toFixed(2);
+            document.getElementById('formNbboRef').innerText = '$' + orderBook.nbboRef.toFixed(2);
+            document.getElementById('orderPrice').value = orderBook.nbboRef.toFixed(2);
+
+            updateRiskConfig();
+            renderOrderBook();
+        }
+
+        function renderOrderBook() {
+            const ref = orderBook.nbboRef;
+            const spread = orderBook.spread;
+
+            // Generate realistic asks
+            const asks = [
+                { price: ref + spread * 2.5, size: 4.8 },
+                { price: ref + spread * 1.8, size: 2.1 },
+                { price: ref + spread * 1.1, size: 5.6 },
+                { price: ref + spread * 0.5, size: 1.4 }
+            ];
+
+            // Generate realistic bids
+            const bids = [
+                { price: ref - spread * 0.5, size: 3.2 },
+                { price: ref - spread * 1.2, size: 4.9 },
+                { price: ref - spread * 1.9, size: 7.5 },
+                { price: ref - spread * 2.6, size: 11.2 }
+            ];
+
+            const asksHtml = asks.map(a => `
+                <div class="flex justify-between items-center px-1 py-0.5 rounded hover:bg-slate-800/60 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 bottom-0 bg-red-500/10" style="width: ${Math.min(100, a.size * 12)}%"></div>
+                    <span class="text-red-400 font-bold z-10">$${a.price.toFixed(2)}</span>
+                    <span class="text-slate-300 z-10">${a.size.toFixed(2)}</span>
+                    <span class="text-slate-400 text-[10px] z-10">$${(a.price * a.size).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                </div>
+            `).join('');
+
+            const bidsHtml = bids.map(b => `
+                <div class="flex justify-between items-center px-1 py-0.5 rounded hover:bg-slate-800/60 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 bottom-0 bg-emerald-500/10" style="width: ${Math.min(100, b.size * 12)}%"></div>
+                    <span class="text-emerald-400 font-bold z-10">$${b.price.toFixed(2)}</span>
+                    <span class="text-slate-300 z-10">${b.size.toFixed(2)}</span>
+                    <span class="text-slate-400 text-[10px] z-10">$${(b.price * b.size).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('asksContainer').innerHTML = asksHtml;
+            document.getElementById('bidsContainer').innerHTML = bidsHtml;
+        }
+
+        // ==========================================
+        // D3.JS TOP-OF-BOOK SPOOFING HEATMAP ENGINE
+        // ==========================================
+        let heatmapData = [];
+        let heatmapInterval = null;
+        let isFeedRunning = true;
+        const priceBands = [
+            'Ask +3 (NBBO +1.5%)',
+            'Ask +2 (NBBO +1.0%)',
+            'Ask +1 (NBBO +0.5%)',
+            'NBBO Spread (Top-of-Book)',
+            'Bid -1 (NBBO -0.5%)',
+            'Bid -2 (NBBO -1.0%)',
+            'Bid -3 (NBBO -1.5%)'
+        ];
+        const numTimeSlices = 24;
+
+        function generateInitialHeatmapData() {
+            heatmapData = [];
+            for (let t = 0; t < numTimeSlices; t++) {
+                priceBands.forEach((band, pIdx) => {
+                    const isTopBook = band.includes('Ask +1') || band.includes('Bid -1');
+                    const isSpoofBurst = (t === 6 && band.includes('Ask +1')) || (t === 14 && band.includes('Bid -1')) || (t === 20 && band.includes('Ask +2'));
+
+                    let cancelledVol = isSpoofBurst ? Math.floor(45000 + Math.random() * 25000) : (isTopBook ? Math.floor(5000 + Math.random() * 18000) : Math.floor(1000 + Math.random() * 6000));
+                    let restingTime = isSpoofBurst ? Math.floor(80 + Math.random() * 220) : Math.floor(450 + Math.random() * 1200);
+
+                    heatmapData.push({
+                        timeIndex: t,
+                        priceBand: band,
+                        priceIndex: pIdx,
+                        cancelledVol: cancelledVol,
+                        restingTimeMs: restingTime,
+                        isSpoof: isSpoofBurst,
+                        traderId: '0x' + (isSpoofBurst ? '99A4...C08E' : '3B12...4D21')
+                    });
+                });
+            }
+        }
+
+        function initOrUpdateHeatmap() {
+            if (heatmapData.length === 0) {
+                generateInitialHeatmapData();
+            }
+
+            const svg = d3.select("#d3SpoofingSvg");
+            svg.selectAll("*").remove();
+
+            const container = document.getElementById("heatmapContainer");
+            const width = Math.max(800, container.clientWidth - 28);
+            const height = 340;
+            const margin = { top: 20, right: 30, bottom: 40, left: 180 };
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            const g = svg.attr("viewBox", `0 0 ${width} ${height}`)
+                         .append("g")
+                         .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Scales
+            const xScale = d3.scaleBand()
+                .domain(d3.range(numTimeSlices))
+                .range([0, innerWidth])
+                .padding(0.06);
+
+            const yScale = d3.scaleBand()
+                .domain(priceBands)
+                .range([0, innerHeight])
+                .padding(0.08);
+
+            // Sequential multi-stop color scale
+            const maxVol = 65000;
+            const colorScale = d3.scaleSequential()
+                .domain([0, maxVol])
+                .interpolator(t => {
+                    if (t < 0.25) return d3.interpolateRgb("#0F172A", "#0284C7")(t / 0.25);
+                    if (t < 0.6) return d3.interpolateRgb("#0284C7", "#F59E0B")((t - 0.25) / 0.35);
+                    if (t < 0.85) return d3.interpolateRgb("#F59E0B", "#F97316")((t - 0.6) / 0.25);
+                    return d3.interpolateRgb("#F97316", "#EF4444")((t - 0.85) / 0.15);
+                });
+
+            // Heatmap Cells
+            const tooltip = d3.select("#d3Tooltip");
+
+            g.selectAll("rect.cell")
+                .data(heatmapData)
+                .enter()
+                .append("rect")
+                .attr("class", "cell")
+                .attr("x", d => xScale(d.timeIndex))
+                .attr("y", d => yScale(d.priceBand))
+                .attr("width", xScale.bandwidth())
+                .attr("height", yScale.bandwidth())
+                .attr("rx", 3)
+                .attr("fill", d => d.isSpoof ? "#DC2626" : colorScale(d.cancelledVol))
+                .attr("stroke", d => d.isSpoof ? "#F87171" : "#1e293b")
+                .attr("stroke-width", d => d.isSpoof ? 2 : 1)
+                .attr("cursor", "pointer")
+                .on("mouseenter", function(event, d) {
+                    d3.select(this).attr("stroke", "#ffffff").attr("stroke-width", 2);
+                    tooltip.classed("hidden", false)
+                           .html(`
+                                <div class="text-white font-bold text-xs border-b border-slate-700 pb-1 mb-1 flex items-center justify-between">
+                                    <span>${d.priceBand.split(' ')[0]}</span>
+                                    <span class="${d.isSpoof ? 'text-red-400 font-bold' : 'text-emerald-400'}">${d.isSpoof ? 'SPOOFING SUSPECT' : 'NORMAL CANCEL'}</span>
+                                </div>
+                                <div class="text-slate-300">Cancelled Vol: <strong class="text-amber-300">${d.cancelledVol.toLocaleString()}</strong> shares</div>
+                                <div class="text-slate-300">Resting Time: <strong class="${d.restingTimeMs < 400 ? 'text-red-400 font-bold' : 'text-slate-200'}">${d.restingTimeMs} ms</strong></div>
+                                <div class="text-slate-400 text-[10px] mt-1">Participant: ${d.traderId}</div>
+                           `);
+                })
+                .on("mousemove", function(event) {
+                    const [mx, my] = d3.pointer(event, container);
+                    tooltip.style("left", (mx + 15) + "px").style("top", (my + 15) + "px");
+                })
+                .on("mouseleave", function(event, d) {
+                    d3.select(this)
+                      .attr("stroke", d.isSpoof ? "#F87171" : "#1e293b")
+                      .attr("stroke-width", d.isSpoof ? 2 : 1);
+                    tooltip.classed("hidden", true);
+                });
+
+            // Pulsing Hazard Indicators for Confirmed Spoofs
+            g.selectAll("circle.spoof-ring")
+                .data(heatmapData.filter(d => d.isSpoof))
+                .enter()
+                .append("circle")
+                .attr("class", "spoof-ring")
+                .attr("cx", d => xScale(d.timeIndex) + xScale.bandwidth() / 2)
+                .attr("cy", d => yScale(d.priceBand) + yScale.bandwidth() / 2)
+                .attr("r", Math.min(xScale.bandwidth(), yScale.bandwidth()) * 0.26)
+                .attr("fill", "#FEE2E2")
+                .attr("stroke", "#EF4444")
+                .attr("stroke-width", 1.5)
+                .append("animate")
+                .attr("attributeName", "r")
+                .attr("values", `${Math.min(xScale.bandwidth(), yScale.bandwidth()) * 0.2};${Math.min(xScale.bandwidth(), yScale.bandwidth()) * 0.38};${Math.min(xScale.bandwidth(), yScale.bandwidth()) * 0.2}`)
+                .attr("dur", "1.2s")
+                .attr("repeatCount", "indefinite");
+
+            // Y-Axis (Price Levels)
+            g.append("g")
+                .call(d3.axisLeft(yScale))
+                .attr("color", "#64748B")
+                .selectAll("text")
+                .style("font-size", "11px")
+                .style("font-family", "monospace")
+                .style("fill", "#94A3B8");
+
+            // X-Axis (Time Slices)
+            const xAxis = d3.axisBottom(xScale)
+                .tickValues(d3.range(numTimeSlices).filter(t => t % 3 === 0))
+                .tickFormat(t => `T-${(numTimeSlices - t) * 5}s`);
+
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(xAxis)
+                .attr("color", "#64748B")
+                .selectAll("text")
+                .style("font-size", "10px")
+                .style("font-family", "monospace")
+                .style("fill", "#94A3B8");
+
+            renderIncidentsTable();
+        }
+
+        function toggleHeatmapFeed() {
+            isFeedRunning = !isFeedRunning;
+            const btn = document.getElementById("feedToggleText");
+            const icon = document.getElementById("feedToggleIcon");
+
+            if (isFeedRunning) {
+                btn.innerText = "Pause Live Simulation";
+                icon.className = "fa-solid fa-pause";
+                startHeatmapLoop();
+            } else {
+                btn.innerText = "Resume Live Simulation";
+                icon.className = "fa-solid fa-play";
+                clearInterval(heatmapInterval);
+            }
+        }
+
+        function stepHeatmapFeed() {
+            // Shift time slices left and generate new slice on the right
+            heatmapData.forEach(d => {
+                d.timeIndex -= 1;
+            });
+            heatmapData = heatmapData.filter(d => d.timeIndex >= 0);
+
+            // Append new column at timeIndex = numTimeSlices - 1
+            const isBurstNow = Math.random() > 0.82;
+            priceBands.forEach((band, pIdx) => {
+                const isTarget = isBurstNow && (pIdx === 2 || pIdx === 4);
+                let cancelledVol = isTarget ? Math.floor(48000 + Math.random() * 20000) : Math.floor(2000 + Math.random() * 15000);
+                let restingTime = isTarget ? Math.floor(95 + Math.random() * 180) : Math.floor(400 + Math.random() * 1100);
+
+                heatmapData.push({
+                    timeIndex: numTimeSlices - 1,
+                    priceBand: band,
+                    priceIndex: pIdx,
+                    cancelledVol: cancelledVol,
+                    restingTimeMs: restingTime,
+                    isSpoof: isTarget,
+                    traderId: '0x' + (isTarget ? '99A4...C08E' : '77E1...5B22')
+                });
+            });
+
+            initOrUpdateHeatmap();
+        }
+
+        function resetHeatmapData() {
+            generateInitialHeatmapData();
+            initOrUpdateHeatmap();
+        }
+
+        function startHeatmapLoop() {
+            clearInterval(heatmapInterval);
+            heatmapInterval = setInterval(() => {
+                if (currentTab === 'compliance' && isFeedRunning) {
+                    stepHeatmapFeed();
+                }
+            }, 3000);
+        }
+
+        function renderIncidentsTable() {
+            const tbody = document.getElementById("incidentsTableBody");
+            const flagged = heatmapData.filter(d => d.isSpoof).slice(0, 5);
+
+            if (flagged.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500">No active spoofing patterns detected at top-of-book.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = flagged.map((inc, i) => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="py-2 px-3 text-red-400 font-bold">SPF-90${i+1}</td>
+                    <td class="py-2 px-3 text-white">${inc.priceBand.split(' ')[0]}</td>
+                    <td class="py-2 px-3 text-amber-300 font-bold">${inc.cancelledVol.toLocaleString()}</td>
+                    <td class="py-2 px-3 text-red-400 font-bold">${inc.restingTimeMs} ms</td>
+                    <td class="py-2 px-3 text-slate-300">${inc.traderId}</td>
+                    <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-950 text-red-400 border border-red-800">CRITICAL</span></td>
+                    <td class="py-2 px-3 text-right">
+                        <button onclick="flagTrader('${inc.traderId}')" class="px-2.5 py-1 rounded bg-red-600/80 hover:bg-red-500 text-white text-[10px] font-bold transition cursor-pointer">
+                            Sanction Trader
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function flagTrader(traderId) {
+            alert(`Participant ${traderId} has been flagged for FINRA Rule 5210 spoofing surveillance review. Order routing privileges suspended.`);
+        }
+
+        // ==========================================
+        // AUTH0 SOCIAL AUTH & VIP TIER ENGINE
+        // ==========================================
+        function toggleVipTier() {
+            isVip = !isVip;
+            currentUser.role = isVip ? 'VIP_TRADER' : 'FREE_TIER_1';
+
+            const tierBadge = document.getElementById('userTierBadge');
+            const dropTier = document.getElementById('dropdownTierText');
+            const vipAccess = document.getElementById('vipAccessText');
+            const toggleBtn = document.getElementById('toggleVipBtn');
+            const upgradeBtn = document.getElementById('upgradeBtn');
+            const currentRole = document.getElementById('currentRoleBadge');
+            const marketPerm = document.getElementById('marketPermBadge');
+
+            if (isVip) {
+                tierBadge.className = 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 border border-amber-300 text-[10px] px-1.5 py-0.2 rounded uppercase font-bold shadow';
+                tierBadge.innerText = 'VIP_TRADER';
+                dropTier.innerText = 'VIP_TRADER ($299/mo)';
+                vipAccess.innerHTML = '<span class="text-emerald-400 font-semibold"><i class="fa-solid fa-unlock mr-1"></i> Full DMA & Dark Pool</span>';
+                if (toggleBtn) toggleBtn.innerText = 'Downgrade to Standard Free Tier';
+                if (upgradeBtn) upgradeBtn.innerHTML = '<i class="fa-solid fa-crown text-slate-950"></i> Active VIP Subscription';
+                if (currentRole) currentRole.innerText = 'VIP_TRADER ($299/mo)';
+                if (marketPerm) marketPerm.innerText = 'DMA, Intermarket Sweeps & Dark Pool Active';
+            } else {
+                tierBadge.className = 'bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] px-1.5 py-0.2 rounded uppercase font-bold';
+                tierBadge.innerText = 'FREE_TIER_1';
+                dropTier.innerText = 'FREE_TIER_1';
+                vipAccess.innerHTML = '<span class="text-red-400 font-semibold"><i class="fa-solid fa-lock mr-1"></i> Restricted</span>';
+                if (toggleBtn) toggleBtn.innerText = 'Activate VIP Membership ($299/mo)';
+                if (upgradeBtn) upgradeBtn.innerHTML = '<i class="fa-solid fa-crown"></i> Upgrade to VIP Tier ($299/mo)';
+                if (currentRole) currentRole.innerText = 'FREE_TIER_1';
+                if (marketPerm) marketPerm.innerText = 'Standard Limit & Market Orders';
+            }
+
+            updateJwtDisplay();
+        }
+
+        function loginAs(provider) {
+            const providerNames = {
+                google: 'Google / Gmail OAuth',
+                github: 'GitHub OAuth',
+                microsoft: 'Microsoft 365 Azure AD',
+                web3: 'Web3 MetaMask (EIP-4361 SIWE)'
+            };
+            currentUser.provider = providerNames[provider];
+            document.getElementById('authProviderDisplay').innerText = currentUser.provider;
+            alert(`Authenticated via Auth0 Universal Login using ${currentUser.provider}! Session token refreshed.`);
+            updateJwtDisplay();
+        }
+
+        function updateJwtDisplay() {
+            const payload = {
+                iss: "https://tokenworldexchange.us.auth0.com/",
+                sub: "auth0|66b8f390d401e74a81b",
+                aud: "https://api.tokenworldexchange.com/ats",
+                iat: Math.floor(Date.now() / 1000),
+                exp: Math.floor(Date.now() / 1000) + 86400,
+                name: currentUser.name,
+                email: currentUser.email,
+                provider: currentUser.provider,
+                "https://tokenworldexchange.com/roles": [currentUser.role],
+                "https://tokenworldexchange.com/ats_cleared": true,
+                "https://tokenworldexchange.com/vip_hft_enabled": isVip,
+                "https://tokenworldexchange.com/sec_rule_15c3_5_collar_limit_usd": riskConfig.maxNotional
+            };
+
+            const display = document.getElementById('jwtPayloadDisplay');
+            if (display) {
+                display.innerText = JSON.stringify(payload, null, 2);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            renderOrderBook();
+            updateRiskConfig();
+            updateCollarCheck();
+            startHeatmapLoop();
+            updateJwtDisplay();
+        });
+    </script>
+</body>
+</html>

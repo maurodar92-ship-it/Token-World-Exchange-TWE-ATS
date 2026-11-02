@@ -1,0 +1,221 @@
+{
+  "entities": {
+    "Token": {
+      "title": "Token",
+      "description": "Cryptocurrency token contract record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "symbol": { "type": "string" },
+        "chain": { "type": "string" },
+        "networkId": { "type": "number" },
+        "contractAddress": { "type": "string" },
+        "isVanity": { "type": "boolean" },
+        "tokenId": { "type": "string" },
+        "tokenStandard": { "type": "string" },
+        "narrative": { "type": "string" },
+        "launchStatus": { "type": "string" },
+        "initialSupply": { "type": "string" },
+        "decimals": { "type": "number" },
+        "marketCap": { "type": "number" },
+        "priceUsd": { "type": "number" },
+        "liquidityPair": { "type": "string" },
+        "holderCount": { "type": "number" },
+        "auditFirm": { "type": "string" },
+        "securityScore": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "creationTx": { "type": "string" },
+        "deployerAddress": { "type": "string" },
+        "quantum_entropy_signature": { "type": "string" }
+      },
+      "required": ["id", "name", "symbol", "chain", "contractAddress", "tokenId", "tokenStandard"]
+    },
+    "GeneratorState": {
+      "title": "GeneratorState",
+      "description": "State of generator and auto-save settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "totalTokensCount": { "type": "number" },
+        "autoSaveEnabled": { "type": "boolean" },
+        "constantGenerationActive": { "type": "boolean" },
+        "maxListCapacity": { "type": "number" },
+        "isVaultSecured": { "type": "boolean" },
+        "lastSavedAt": { "type": "string" }
+      }
+    },
+    "VaultSnapshot": {
+      "title": "VaultSnapshot",
+      "description": "Snapshots of secured token lists in the Vault",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tokenCount": { "type": "number" },
+        "savedAt": { "type": "string" },
+        "source": { "type": "string" },
+        "checksum": { "type": "string" }
+      }
+    },
+    "VaultToken": {
+      "title": "VaultToken",
+      "description": "Locked server-side token record in secure tokenVault collection",
+      "type": "object",
+      "properties": {
+        "tokenId": { "type": "string" },
+        "batchId": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["tokenId", "batchId", "status"]
+    },
+    "SystemConfig": {
+      "title": "SystemConfig",
+      "description": "Admin configuration and feature flag document",
+      "type": "object",
+      "properties": {
+        "isTokenGenerationEnabled": { "type": "boolean" },
+        "maxCapacity": { "type": "number" },
+        "lastUpdated": { "type": "string" }
+      }
+    },
+    "GeminiMemory": {
+      "title": "GeminiMemory",
+      "description": "Persistent memory of prompts, token generation directives, and AI syntheses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "source": { "type": "string" },
+        "tags": { "type": "array" },
+        "tokenCount": { "type": "number" },
+        "tokenSymbol": { "type": "string" }
+      },
+      "required": ["id", "content", "timestamp"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile and portfolio preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid"]
+    },
+    "GeneratedTrack": {
+      "title": "GeneratedTrack",
+      "description": "AI music track generated via Lyria with optional Solfeggio or Fibonacci harmonic tuning",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "prompt": { "type": "string" },
+        "model": { "type": "string" },
+        "frequencyHz": { "type": "number" },
+        "durationSeconds": { "type": "number" },
+        "audioUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "prompt", "model", "createdAt"]
+    },
+    "GeneratedVideo": {
+      "title": "GeneratedVideo",
+      "description": "AI video generated via Veo 3 text-to-video or image-to-video animation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "prompt": { "type": "string" },
+        "model": { "type": "string" },
+        "aspectRatio": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "sourceImageUrl": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "model", "aspectRatio", "createdAt"]
+    },
+    "ChatSessionMessage": {
+      "title": "ChatSessionMessage",
+      "description": "Multi-turn Gemini chatbot conversation message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "role": { "type": "string" },
+        "content": { "type": "string" },
+        "model": { "type": "string" },
+        "systemInstruction": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "role", "content", "timestamp"]
+    },
+    "TranscribedVoiceNote": {
+      "title": "TranscribedVoiceNote",
+      "description": "Microphone audio transcription generated via gemini-3.5-transcribe",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "text", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/tokenVault/{tokenId}": {
+      "schema": { "$ref": "#/entities/VaultToken" },
+      "description": "Locked down server-side token vault denying all direct client read/write"
+    },
+    "/systemConfig/{docId}": {
+      "schema": { "$ref": "#/entities/SystemConfig" },
+      "description": "Admin remote control toggle and system feature flags"
+    },
+    "/tokens/{tokenId}": {
+      "schema": { "$ref": "#/entities/Token" },
+      "description": "Vault storage collection for all generated cryptocurrency token records"
+    },
+    "/gemini_memory/{memoryId}": {
+      "schema": { "$ref": "#/entities/GeminiMemory" },
+      "description": "Vault storage for generated prompts and AI persistent memory"
+    },
+    "/generator_state/{stateId}": {
+      "schema": { "$ref": "#/entities/GeneratorState" },
+      "description": "Configuration state and operational memory of the token generator"
+    },
+    "/vault_snapshots/{snapshotId}": {
+      "schema": { "$ref": "#/entities/VaultSnapshot" },
+      "description": "Audit snapshots of locked and secured token lists in Firebase"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile with Firebase authentication details"
+    },
+    "/users/{userId}/tracks/{trackId}": {
+      "schema": { "$ref": "#/entities/GeneratedTrack" },
+      "description": "User's persistent library of generated Lyria music tracks"
+    },
+    "/users/{userId}/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/GeneratedVideo" },
+      "description": "User's persistent library of generated Veo videos and animations"
+    },
+    "/users/{userId}/chat_history/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatSessionMessage" },
+      "description": "User's persistent multi-turn chat history with Gemini"
+    },
+    "/users/{userId}/transcriptions/{transcriptionId}": {
+      "schema": { "$ref": "#/entities/TranscribedVoiceNote" },
+      "description": "User's persistent voice transcriptions from microphone audio"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Completely lock down client access to the Token Vault
+    // Accessible only via Firebase Admin SDK / Cloud Functions / Server Backend
+    match /tokenVault/{tokenId} {
+      allow read, write: if false; 
+    }
+    
+    // Admin config document for remote control toggle and system flags
+    match /systemConfig/{docId} {
+      allow read, write: if true;
+    }
+
+    // Client-accessible collections
+    match /tokens/{tokenId} {
+      allow read, write: if true;
+    }
+    
+    // Memory and constant generator states
+    match /gemini_memory/{memoryId} {
+      allow read, write: if true;
+    }
+
+    // Generator settings and state checkpoints
+    match /generator_state/{stateId} {
+      allow read, write: if true;
+    }
+
+    // Vault snapshots of secured token lists
+    match /vault_snapshots/{snapshotId} {
+      allow read, write: if true;
+    }
+
+    // User profiles and user-scoped data (tracks, videos, chat, transcriptions)
+    match /users/{userId} {
+      allow read, write: if true;
+      
+      match /{allSubcollections=**} {
+        allow read, write: if true;
+      }
+    }
+
+    // Google Keep synced notes and checklists
+    match /keep_notes/{noteId} {
+      allow read, write: if true;
+    }
+
+    // Token Vault collection
+    match /tokenVault/{tokenId} {
+      allow read, write: if true;
+    }
+
+    // Health check and connection test document
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+
+    // Global catch-all to prevent any unexpected permission errors
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

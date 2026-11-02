@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  tokenworld-trading-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tokenworld-ats-portal
+    ports:
+      - "3000:3000"
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ENABLE_LIVE_TRADING=false
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OWNER_NAME=Mauro Lomibao Dar III
+      - OWNER_HQ=945 Westholme Ave, Los Angeles, CA 90024
+      - OWNER_PHONE=(310) 904-5646
+      - OWNER_EMAIL=mdgodsiii@gmail.com
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/ats/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  tokenworld-fastapi-matching-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tokenworld-fastapi-ats
+    command: ["python3", "main.py"]
+    ports:
+      - "8001:8000"
+    environment:
+      - ENABLE_LIVE_TRADING=false
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3

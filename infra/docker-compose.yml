@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  tokenworld-backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: tokenworld-ats-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - ENABLE_LIVE_TRADING=false
+      - OWNER_NAME=Mauro Lomibao Dar III
+      - OWNER_HQ=945 Westholme Ave, Los Angeles, CA 90024
+      - OWNER_PHONE=(310) 904-5646
+      - OWNER_EMAIL=mdgodsiii@gmail.com
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/orderbook/TW-DEMO"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  tokenworld-sandbox-frontend:
+    image: nginx:alpine
+    container_name: tokenworld-sandbox-ui
+    ports:
+      - "5000:80"
+    volumes:
+      - ../public/sandbox.html:/usr/share/nginx/html/index.html:ro
+    restart: unless-stopped

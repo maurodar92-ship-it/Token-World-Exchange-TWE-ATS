@@ -1,0 +1,284 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0A0A0C;
+    color: #E0E0E0;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* Custom dark scrollbar matching #0A0A0C and #1F1F23 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0A0A0C;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1F1F23;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F27D26;
+  }
+}
+
+/* High-Contrast Light Mode Overrides */
+html.theme-light,
+html.theme-light body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+html.theme-light .bg-\[\#0A0A0C\] {
+  background-color: #F1F5F9 !important;
+}
+
+html.theme-light .bg-\[\#16161A\] {
+  background-color: #FFFFFF !important;
+}
+
+html.theme-light .border-\[\#1F1F23\] {
+  border-color: #CBD5E1 !important;
+}
+
+html.theme-light .text-\[\#E0E0E0\] {
+  color: #0F172A !important;
+}
+
+html.theme-light .text-\[\#8E9299\] {
+  color: #475569 !important;
+}
+
+html.theme-light .text-white {
+  color: #020617 !important;
+}
+
+html.theme-light .text-\[\#555\] {
+  color: #64748B !important;
+}
+
+html.theme-light .hover\:bg-\[\#1E1E24\]:hover {
+  background-color: #E2E8F0 !important;
+}
+
+html.theme-light .hover\:bg-\[\#1F1F23\]\/60:hover {
+  background-color: #E2E8F0 !important;
+}
+
+html.theme-light input,
+html.theme-light textarea,
+html.theme-light select {
+  color: #0F172A !important;
+}
+
+html.theme-light input::placeholder,
+html.theme-light textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+html.theme-light ::-webkit-scrollbar-track {
+  background: #F1F5F9 !important;
+}
+
+html.theme-light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1 !important;
+}
+
+html.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: #EA580C !important;
+}
+
+/* ==========================================================================
+   Prism.js ABI Syntax Highlighting & Token Aesthetics
+   Distinguishes keys, values, EVM types, and keywords with high contrast
+   ========================================================================== */
+
+/* Dark Mode Palette (Default) */
+.prism-abi-code .token.abi-key {
+  color: #38BDF8 !important; /* Sky blue / Cyan for JSON Property Keys */
+  font-weight: 600;
+}
+
+.prism-abi-code .token.abi-type {
+  color: #34D399 !important; /* Emerald green for EVM Types (address, uint256, bool) */
+  font-weight: 500;
+}
+
+.prism-abi-code .token.abi-keyword {
+  color: #C084FC !important; /* Purple/Violet for EVM Function/Event keywords */
+  font-weight: 600;
+}
+
+.prism-abi-code .token.abi-value {
+  color: #FBBF24 !important; /* Amber/Yellow for values & identifiers */
+}
+
+.prism-abi-code .token.abi-address {
+  color: #F472B6 !important; /* Pink for 0x address literals */
+  text-decoration: underline dotted;
+}
+
+.prism-abi-code .token.abi-boolean {
+  color: #FB7185 !important; /* Rose for true/false */
+  font-weight: 600;
+}
+
+.prism-abi-code .token.abi-number {
+  color: #FB923C !important; /* Orange for numbers */
+}
+
+.prism-abi-code .token.abi-punctuation {
+  color: #64748B !important; /* Muted slate for brackets and colons */
+}
+
+.prism-abi-code .token.abi-js-keyword,
+.prism-abi-code .token.keyword {
+  color: #818CF8 !important; /* Indigo for JS const/new keywords */
+  font-weight: 600;
+}
+
+.prism-abi-code .token.abi-cli-command {
+  color: #22D3EE !important; /* Cyan for CLI commands */
+  font-weight: 600;
+}
+
+.prism-abi-code .token.operator {
+  color: #94A3B8 !important;
+}
+
+/* High-Contrast Light Mode Overrides */
+html.theme-light .prism-abi-code .token.abi-key {
+  color: #0284C7 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-type {
+  color: #059669 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-keyword {
+  color: #7C3AED !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-value {
+  color: #D97706 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-address {
+  color: #DB2777 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-boolean {
+  color: #E11D48 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-number {
+  color: #C2410C !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-punctuation {
+  color: #94A3B8 !important;
+}
+
+html.theme-light .prism-abi-code .token.abi-js-keyword,
+html.theme-light .prism-abi-code .token.keyword {
+  color: #4F46E5 !important;
+}
+
+@keyframes scan-laser {
+  0% {
+    top: 5%;
+    opacity: 0.8;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.8;
+  }
+}
+
+.animate-scan-laser {
+  animation: scan-laser 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ==========================================================================
+   RSI Dynamic Signal Pulse Animations for WalletPortfolioView Modal
+   Subtle pulse for standard buy/sell zones (RSI <= 30 or >= 70)
+   Intensified pulse with energetic frequency & vibrant glow for extreme zones
+   (deep oversold RSI < 20 or deep overbought RSI > 80)
+   ========================================================================== */
+
+@keyframes rsi-pulse-buy-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.02);
+    box-shadow: 0 0 8px 1px rgba(16, 185, 129, 0.35);
+  }
+}
+
+@keyframes rsi-pulse-buy-intense {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.45), inset 0 0 4px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 6px rgba(16, 185, 129, 0.8), inset 0 0 8px rgba(52, 211, 153, 0.6);
+  }
+}
+
+@keyframes rsi-pulse-sell-subtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+  50% {
+    opacity: 0.88;
+    transform: scale(1.02);
+    box-shadow: 0 0 8px 1px rgba(244, 63, 94, 0.35);
+  }
+}
+
+@keyframes rsi-pulse-sell-intense {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 6px 2px rgba(244, 63, 94, 0.45), inset 0 0 4px rgba(244, 63, 94, 0.3);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 6px rgba(244, 63, 94, 0.8), inset 0 0 8px rgba(251, 113, 133, 0.6);
+  }
+}
+
+.animate-rsi-buy-subtle {
+  animation: rsi-pulse-buy-subtle 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-rsi-buy-intense {
+  animation: rsi-pulse-buy-intense 0.85s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-rsi-sell-subtle {
+  animation: rsi-pulse-sell-subtle 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-rsi-sell-intense {
+  animation: rsi-pulse-sell-intense 0.85s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+

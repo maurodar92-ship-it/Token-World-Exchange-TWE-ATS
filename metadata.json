@@ -1,0 +1,11 @@
+{
+  "name": "Remix Token World Exchange ATS®",
+  "description": "High-volume token \u0026 contract address generator, 2026 crypto market simulator, and synthetic dataset foundry with multi-chain EVM/Solana/Quantum generation and developer scripts. Creator: Mauro L. Dar III Taurus King of God Zeus Mao-Mao!",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

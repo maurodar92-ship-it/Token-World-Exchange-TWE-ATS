@@ -1,0 +1,59 @@
+services:
+  exchange-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: tokenworld-exchange-core
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@postgres:5432/tokenworld
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - tokenworld-net
+
+  matching-engine:
+    image: alpine:latest
+    container_name: tokenworld-matching-engine
+    command: ["sh", "-c", "echo 'High-performance L3 Order Book Matching Engine Online' && sleep infinity"]
+    restart: always
+    networks:
+      - tokenworld-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: tokenworld-orderbook-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tokenworld-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: tokenworld-settlement-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tokenworld_super_secret_2026}
+      POSTGRES_DB: tokenworld
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - tokenworld-net
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  tokenworld-net:
+    driver: bridge

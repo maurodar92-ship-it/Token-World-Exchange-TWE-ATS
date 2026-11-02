@@ -1,0 +1,39 @@
+# Multi-stage production build for Token World Production Exchange
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy full application codebase
+COPY . .
+
+# Build Vite frontend and bundled Node server
+ENV NODE_ENV=production
+RUN npm run build
+
+# Runner stage
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Install production dependencies only
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy compiled artifacts from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.ts ./server.ts
+
+# Security: Non-root user execution
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node", "dist/server.cjs"]
